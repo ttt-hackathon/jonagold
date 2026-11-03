@@ -120,6 +120,7 @@
     if (window.PORTS_NEWS && window.PORTS_NEWS.updated) {
       html += "<p class='ports-small'>News last checked " + portsEsc(window.PORTS_NEWS.updated.slice(0, 10)) + " (" + portsEsc(window.PORTS_NEWS.updated.slice(11, 16)) + " UTC).</p>";
     }
+    html += "<p class='ports-small'>Headlines found with the <a href='https://www.gdeltproject.org/' target='_blank' rel='noopener'>GDELT Project</a> news search.</p>";
     box.innerHTML = html;
   }
 

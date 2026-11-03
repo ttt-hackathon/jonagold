@@ -18,7 +18,7 @@ None. The dashboard is plain HTML and JavaScript with no installed packages or C
 | --- | --- | --- | --- |
 | USGS earthquake feed (earthquake.usgs.gov) | sections/weather.js | US government work, public domain; USGS asks for credit. [Copyrights and credits](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits) | OK. Credited on the page. |
 | US National Weather Service API (api.weather.gov) | sections/weather.js | US government data, free, no key. [Disclaimer](https://www.weather.gov/disclaimer) | OK. Credited on the page. |
-| GDELT DOC API (api.gdeltproject.org) | scripts/fetch-ports-news.mjs (Jeremy's ports section) | **Not checked yet.** | **Open concern.** Jeremy's Claude must confirm GDELT's terms of use and record them here, or remove it. |
+| GDELT DOC API (api.gdeltproject.org) | sections/ports.js (Jeremy's ports section), called from the browser | Free for any use, including commercial, "without fee"; requires a citation to the GDELT Project with a link. Source: [GDELT about page](https://www.gdeltproject.org/about.html), checked 2026-11-03. Note the page covers GDELT "datasets"; it does not mention the DOC API by name. The API also asks for at most one request every 5 seconds, which ports.js follows. | OK. Credited on the page. |
 
 ## Sources looked at and deliberately NOT used
 
