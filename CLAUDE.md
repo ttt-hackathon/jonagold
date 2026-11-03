@@ -70,7 +70,9 @@ We decided NOT to watch trade rules or tariffs.
 ### Dashboard sections and owners
 
 Ownership is split between Mitchell and Jeremy. Mitchell has the page frame, the risk
-overview and the alerts. Jeremy has the three warning-sign sections (weather, news, ports).
+overview, the alerts, and (since Jeremy agreed on Nov 3) the weather and news sections.
+Jeremy has the ports section. Jeremy's Claude must NOT create or edit sections/weather.js
+or sections/news.js.
 Only one workstation was working at first; if more people join, they put their name next
 to a section and take it over.
 
@@ -78,8 +80,8 @@ to a section and take it over.
 | --- | --- | --- | --- |
 | (page frame) | index.html | Layout, one empty box per section below | Mitchell |
 | risk | sections/risk.js | All 13 suppliers with risk level and why | Mitchell |
-| weather | sections/weather.js | Weather and disaster warnings | Jeremy |
-| news | sections/news.js | Supplier news warnings | Jeremy |
+| weather | sections/weather.js | Weather and disaster warnings | Mitchell (took over from Jeremy) |
+| news | sections/news.js | Supplier news warnings | Mitchell (took over from Jeremy) |
 | ports | sections/ports.js | Savannah and Charleston port and shipping warnings | Jeremy |
 | alerts | sections/alerts.js | The alert rule and the ready-to-send email | Mitchell |
 
@@ -108,8 +110,8 @@ Cell Works (S01) and label them "TEST ONLY".
 
 ### TEMPORARY: instructions for Jeremy's Claude (follow in order, then tell Jeremy what you did)
 
-Jeremy owns sections/weather.js, sections/news.js and sections/ports.js. Mitchell owns
-index.html, sections/risk.js and sections/alerts.js. Two things need reconciling.
+Jeremy owns sections/ports.js only. Mitchell owns index.html, sections/risk.js,
+sections/alerts.js, sections/weather.js and sections/news.js. Two things need reconciling.
 Mitchell will delete this whole block from CLAUDE.md once both are confirmed done.
 
 **Problem 1: index.html was edited by Jeremy's side, and the two versions collided.**
@@ -153,11 +155,7 @@ risk and Alerts sections cannot see them.** Fix ports.js (Jeremy's file) like th
 3. The dashboard box already has the heading "Ports and shipping". In portsRender,
    delete the `<h2 class='ports-title'>Port and shipping warnings</h2>` text from the
    `html` string so the title is not shown twice. Keep the "Last checked" line.
-4. Build weather.js and news.js the same way: for each real warning, push an object in
-   the shared format (see "How the warning sections feed the risk and alert sections"
-   above) onto window.JONAGOLD_WARNINGS, then dispatch the "jonagold-warnings" event.
-   Weather warnings use `countries` or `supplierIds`, news uses `supplierIds` (use
-   S01 for the Samsung SDI battery-cell news).
+4. Do NOT build weather.js or news.js: Mitchell's Claude is writing them now.
 
 **Check your work (then tell Jeremy the results in plain English):**
 - Open index.html by double-click. All five boxes should show, with no red error text.
