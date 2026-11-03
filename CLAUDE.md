@@ -84,6 +84,7 @@ to a section and take it over.
 | news | sections/news.js | Supplier news warnings | Mitchell (took over from Jeremy) |
 | ports | sections/ports.js | Savannah and Charleston port and shipping warnings | Jeremy |
 | alerts | sections/alerts.js | The alert rule and the ready-to-send email | Mitchell |
+| poems | sections/poems.js | A haiku and a sonnet about the project (just for fun) | Mitchell |
 
 ### How the warning sections feed the risk and alert sections
 
