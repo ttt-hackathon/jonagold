@@ -67,14 +67,16 @@ We decided NOT to watch trade rules or tariffs.
 
 ### Dashboard sections and owners
 
-Only one workstation is working, so Mitchell owns every piece for now. If more people
-join, they put their name next to a section and take it over.
+Ownership is split between Mitchell and Jeremy. Mitchell has the page frame, the risk
+overview and the alerts. Jeremy has the three warning-sign sections (weather, news, ports).
+Only one workstation was working at first; if more people join, they put their name next
+to a section and take it over.
 
 | Box id (index.html) | File | What it shows | Owner |
 | --- | --- | --- | --- |
 | (page frame) | index.html | Layout, one empty box per section below | Mitchell |
 | risk | sections/risk.js | All 13 suppliers with risk level and why | Mitchell |
-| weather | sections/weather.js | Weather and disaster warnings | Mitchell |
-| news | sections/news.js | Supplier news warnings | Mitchell |
-| ports | sections/ports.js | Savannah and Charleston port and shipping warnings | Mitchell |
+| weather | sections/weather.js | Weather and disaster warnings | Jeremy |
+| news | sections/news.js | Supplier news warnings | Jeremy |
+| ports | sections/ports.js | Savannah and Charleston port and shipping warnings | Jeremy |
 | alerts | sections/alerts.js | The alert rule and the ready-to-send email | Mitchell |
