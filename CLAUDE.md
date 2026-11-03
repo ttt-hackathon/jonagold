@@ -30,6 +30,51 @@ Our team builds ONE dashboard together. Each person owns one section of it.
 
 ## Our team's plan
 
-(Once you've decided, ask Claude to write your plan here: what you're watching,
-what triggers an alert, which sections the dashboard has and who owns each one.
-Then save it to GitHub.)
+### Goal
+
+An early-warning dashboard that spots supply chain trouble at our 13 suppliers
+(data/suppliers.csv) before it stops the production line, and raises an alert.
+Every supplier is covered, every warning shows its source link and date, and every
+supplier gets a risk level with the reason.
+
+### What we watch
+
+1. Weather and natural disasters near supplier factories and ports (typhoons,
+   quakes, floods). Taiwan matters most: four suppliers sit in Taichung, Tainan
+   and Kaohsiung.
+2. News about each supplier (fires, strikes, shutdowns, recalls, financial trouble).
+   Include South Korea news for Samsung SDI, whose cells go into Cataloochee's batteries.
+3. Port and shipping trouble at Savannah and Charleston (congestion, strikes, closures).
+
+We decided NOT to watch trade rules or tariffs.
+
+### Risk levels and alert rule
+
+- Red (alert and email): a confirmed event hits a supplier or port AND the affected
+  part has less than about 5 weeks of stock (inventory.csv weeks_of_cover) OR has no
+  other approved source (parts.csv only_source = Yes).
+- Amber (watch): a credible warning that could become a problem, or a confirmed
+  event at a supplier whose parts have plenty of stock.
+- Green: nothing current.
+
+### Alert email to purchasing (sent for every Red)
+
+1. What happened, in one sentence, with source link and date.
+2. Which supplier and parts are affected, and which bikes use them.
+3. Weeks of stock left, compared with when the next shipment is due (open_orders.csv).
+4. What to do, chosen to fit: call the supplier, ask the carrier to expedite or
+   reroute, place an extra order, or start talking to a backup supplier if one exists.
+
+### Dashboard sections and owners
+
+Only one workstation is working, so Mitchell owns every piece for now. If more people
+join, they put their name next to a section and take it over.
+
+| Box id (index.html) | File | What it shows | Owner |
+| --- | --- | --- | --- |
+| (page frame) | index.html | Layout, one empty box per section below | Mitchell |
+| risk | sections/risk.js | All 13 suppliers with risk level and why | Mitchell |
+| weather | sections/weather.js | Weather and disaster warnings | Mitchell |
+| news | sections/news.js | Supplier news warnings | Mitchell |
+| ports | sections/ports.js | Savannah and Charleston port and shipping warnings | Mitchell |
+| alerts | sections/alerts.js | The alert rule and the ready-to-send email | Mitchell |
