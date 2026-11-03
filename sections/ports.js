@@ -8,7 +8,7 @@
   //   { port: "Savannah", kind: "Congestion", level: "Amber",
   //     summary: "One sentence on what happened.",
   //     sourceName: "Name of the news site", sourceUrl: "https://...", date: "2026-11-02" }
-  // level: "Amber" = credible warning that could become a problem,
+  // level: "Amber" = credible warning that could become a problem (shared as "credible"),
   //        "Confirmed" = event has happened (the risk section decides Red or Amber from stock levels).
   var portsWarnings = [];
 
@@ -56,6 +56,7 @@
       "#ports .ports-red{background:#f9dcd8;color:#8a1c10}" +
       "#ports .ports-text{margin:6px 0 0;font-size:14px;line-height:1.45}" +
       "#ports .ports-small{margin:6px 0 0;font-size:12px;color:#5b6b62;line-height:1.4}" +
+      "#ports .ports-list{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.45}" +
       "#ports a{color:#2f6b4f}";
 
     var html = "<style>" + css + "</style>" +
@@ -74,15 +75,27 @@
         if (w.level === "Amber" && level === "Green") level = "Amber";
         if (w.level === "Confirmed") level = "Confirmed";
       });
-      var badgeClass = level === "Green" ? "ports-green" : "ports-amber";
-      var badgeText = level === "Green" ? "Green: nothing current" : (level === "Confirmed" ? "Event confirmed" : "Amber: watch");
+      // Automatic news feed (data/ports-news.js, refreshed hourly by GitHub). Headlines are unverified.
+      var feed = window.PORTS_NEWS && window.PORTS_NEWS.ports ? window.PORTS_NEWS.ports[p.name] : undefined;
+      var headlines = Array.isArray(feed) ? feed : [];
+      var feedState = feed === undefined ? "none" : (feed === null ? "failed" : "ok");
+      var badgeClass = "ports-amber", badgeText;
+      if (level === "Confirmed") badgeText = "Event confirmed";
+      else if (level === "Amber") badgeText = "Amber: watch";
+      else if (headlines.length) badgeText = "Headlines to review";
+      else if (feedState === "ok") { badgeClass = "ports-green"; badgeText = "Green: nothing current"; }
+      else if (feedState === "failed") badgeText = "News feed could not be checked";
+      else { badgeClass = "ports-green"; badgeText = "Green: nothing found at last manual check"; }
 
       html += "<div class='ports-port'><div class='ports-head'>" +
         "<span class='ports-name'>" + portsEsc(p.name) + ", " + portsEsc(p.state) + "</span>" +
         "<span class='ports-badge " + badgeClass + "'>" + badgeText + "</span></div>";
 
-      if (items.length === 0) {
+      if (items.length === 0 && headlines.length === 0 && feedState !== "failed") {
         html += "<p class='ports-text'>No current congestion, strike or closure found in the latest check.</p>";
+      }
+      if (feedState === "failed") {
+        html += "<p class='ports-text'>The automatic news check did not work last time. Check the port's own site below.</p>";
       }
       items.forEach(function (w) {
         html += "<p class='ports-text'><strong>" + portsEsc(w.kind) + ":</strong> " + portsEsc(w.summary) +
@@ -90,20 +103,55 @@
           "</a>, " + portsEsc(w.date) + "</p>";
       });
 
+      if (headlines.length) {
+        html += "<p class='ports-small'>Possible warnings from the last 7 days. These are headlines, not confirmed events: open the link and read it before acting.</p><ul class='ports-list'>";
+        headlines.slice(0, 5).forEach(function (h) {
+          html += "<li><a href='" + portsEsc(h.url) + "' target='_blank' rel='noopener'>" + portsEsc(h.title) +
+            "</a> <span class='ports-small'>" + portsEsc(h.source) + ", " + portsEsc(h.date) + "</span></li>";
+        });
+        html += "</ul>";
+      }
       if (supText) html += "<p class='ports-small'>" + portsEsc(supText) + "</p>";
       html += "<p class='ports-small'>Check directly: <a href='" + portsEsc(p.officialUrl) +
         "' target='_blank' rel='noopener'>" + portsEsc(p.officialName) + "</a></p></div>";
     });
 
+    if (window.PORTS_NEWS && window.PORTS_NEWS.updated) {
+      html += "<p class='ports-small'>News feed last refreshed " + portsEsc(window.PORTS_NEWS.updated.slice(0, 10)) + " (" + portsEsc(window.PORTS_NEWS.updated.slice(11, 16)) + " UTC).</p>";
+    }
     box.innerHTML = html;
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", portsRender);
-  } else {
+  // Load the automatic news file first (works with a double-click too), then draw.
+  // If the file doesn't exist yet, draw anyway using the manual list only.
+  function portsStart() {
     portsRender();
+    var tag = document.createElement("script");
+    tag.src = "data/ports-news.js";
+    tag.onload = portsRender;
+    tag.onerror = function () {};
+    document.head.appendChild(tag);
   }
 
-  // Lets the risk and alerts sections read the port warnings.
-  window.PORTS_WARNINGS = portsWarnings;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", portsStart);
+  } else {
+    portsStart();
+  }
+
+  // Share the manual warnings with the risk and alerts sections (the team's shared list).
+  // Unreviewed news headlines are NOT shared: a person must read them and add a real entry above.
+  window.JONAGOLD_WARNINGS = window.JONAGOLD_WARNINGS || [];
+  portsWarnings.forEach(function (w) {
+    if (!w.sourceUrl || !w.date) return;
+    window.JONAGOLD_WARNINGS.push({
+      type: "ports",
+      severity: w.level === "Confirmed" ? "confirmed" : "credible",
+      headline: w.summary,
+      sourceUrl: w.sourceUrl,
+      date: w.date,
+      ports: [w.port]
+    });
+  });
+  window.dispatchEvent(new Event("jonagold-warnings"));
 })();
