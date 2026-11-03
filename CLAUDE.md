@@ -105,3 +105,63 @@ To add warnings, a section does two things:
 Warnings without a source link or valid date are ignored. See the top of
 sections/risk.js for the full description. For test warnings, only use Cataloochee
 Cell Works (S01) and label them "TEST ONLY".
+
+### TEMPORARY: instructions for Jeremy's Claude (follow in order, then tell Jeremy what you did)
+
+Jeremy owns sections/weather.js, sections/news.js and sections/ports.js. Mitchell owns
+index.html, sections/risk.js and sections/alerts.js. Two things need reconciling.
+Mitchell will delete this whole block from CLAUDE.md once both are confirmed done.
+
+**Problem 1: index.html was edited by Jeremy's side, and the two versions collided.**
+Mitchell's version is the one the team keeps. It was already merged into the main branch.
+
+1. Say "Get the latest from GitHub": run `git pull`.
+2. If git reports a conflict in index.html, or Jeremy has unsaved local edits to
+   index.html, throw Jeremy's version away and take the main branch's version:
+   `git checkout origin/main -- index.html`
+   (Use exactly this command: it works whether git is merging or rebasing, where the
+   words "ours" and "theirs" mean opposite things.) Then `git add index.html` and finish
+   with `git merge --continue` or `git rebase --continue`, whichever git asks for.
+3. Check no conflict markers are left anywhere: `grep -rn "<<<<<<<" .` must print nothing.
+4. From now on, never edit index.html, sections/risk.js or sections/alerts.js. If a box
+   on the dashboard needs to change, tell Jeremy to ask Mitchell.
+
+**Problem 2: sections/ports.js keeps its warnings in its own format, so the Supplier
+risk and Alerts sections cannot see them.** Fix ports.js (Jeremy's file) like this:
+
+1. Keep the `portsWarnings` list and the way entries are written. Do not add any
+   invented events: every entry still needs a real source link and date.
+2. At the bottom, delete the line `window.PORTS_WARNINGS = portsWarnings;` (nothing
+   reads it) and put this in its place, inside the same function:
+
+       // Share warnings with the risk and alerts sections (format: see CLAUDE.md).
+       window.JONAGOLD_WARNINGS = window.JONAGOLD_WARNINGS || [];
+       portsWarnings.forEach(function (w) {
+         window.JONAGOLD_WARNINGS.push({
+           type: "ports",
+           severity: w.level === "Confirmed" ? "confirmed" : "credible",
+           headline: w.kind + ": " + w.summary,
+           sourceUrl: w.sourceUrl,
+           date: w.date,
+           ports: [w.port]
+         });
+       });
+       window.dispatchEvent(new Event("jonagold-warnings"));
+
+   This maps his fields to the shared format: level "Confirmed" becomes severity
+   "confirmed", and level "Amber" becomes severity "credible".
+3. The dashboard box already has the heading "Ports and shipping". In portsRender,
+   delete the `<h2 class='ports-title'>Port and shipping warnings</h2>` text from the
+   `html` string so the title is not shown twice. Keep the "Last checked" line.
+4. Build weather.js and news.js the same way: for each real warning, push an object in
+   the shared format (see "How the warning sections feed the risk and alert sections"
+   above) onto window.JONAGOLD_WARNINGS, then dispatch the "jonagold-warnings" event.
+   Weather warnings use `countries` or `supplierIds`, news uses `supplierIds` (use
+   S01 for the Samsung SDI battery-cell news).
+
+**Check your work (then tell Jeremy the results in plain English):**
+- Open index.html by double-click. All five boxes should show, with no red error text.
+- With no real warnings entered, the Supplier risk table showing four suppliers as Amber
+  (Giant, Fox, Tektro, DT Swiss) is CORRECT. That comes from stock gaps, not a bug.
+- Only after the above works, say "Save my work to GitHub". If the push is rejected,
+  "get the latest" first, then push again.
