@@ -75,7 +75,7 @@
         if (w.level === "Amber" && level === "Green") level = "Amber";
         if (w.level === "Confirmed") level = "Confirmed";
       });
-      // Automatic news feed (data/ports-news.js, refreshed hourly by GitHub). Headlines are unverified.
+      // Automatic news check, done in the browser each time the page opens. Headlines are unverified.
       var feed = window.PORTS_NEWS && window.PORTS_NEWS.ports ? window.PORTS_NEWS.ports[p.name] : undefined;
       var headlines = Array.isArray(feed) ? feed : [];
       var feedState = feed === undefined ? "none" : (feed === null ? "failed" : "ok");
@@ -85,13 +85,14 @@
       else if (headlines.length) badgeText = "Headlines to review";
       else if (feedState === "ok") { badgeClass = "ports-green"; badgeText = "Green: nothing current"; }
       else if (feedState === "failed") badgeText = "News feed could not be checked";
+      else if (window.PORTS_NEWS && window.PORTS_NEWS.loading) badgeText = "Checking the news...";
       else { badgeClass = "ports-green"; badgeText = "Green: nothing found at last manual check"; }
 
       html += "<div class='ports-port'><div class='ports-head'>" +
         "<span class='ports-name'>" + portsEsc(p.name) + ", " + portsEsc(p.state) + "</span>" +
         "<span class='ports-badge " + badgeClass + "'>" + badgeText + "</span></div>";
 
-      if (items.length === 0 && headlines.length === 0 && feedState !== "failed") {
+      if (items.length === 0 && headlines.length === 0 && feedState !== "failed" && !(window.PORTS_NEWS && window.PORTS_NEWS.loading)) {
         html += "<p class='ports-text'>No current congestion, strike or closure found in the latest check.</p>";
       }
       if (feedState === "failed") {
@@ -117,20 +118,87 @@
     });
 
     if (window.PORTS_NEWS && window.PORTS_NEWS.updated) {
-      html += "<p class='ports-small'>News feed last refreshed " + portsEsc(window.PORTS_NEWS.updated.slice(0, 10)) + " (" + portsEsc(window.PORTS_NEWS.updated.slice(11, 16)) + " UTC).</p>";
+      html += "<p class='ports-small'>News last checked " + portsEsc(window.PORTS_NEWS.updated.slice(0, 10)) + " (" + portsEsc(window.PORTS_NEWS.updated.slice(11, 16)) + " UTC).</p>";
     }
     box.innerHTML = html;
   }
 
-  // Load the automatic news file first (works with a double-click too), then draw.
-  // If the file doesn't exist yet, draw anyway using the manual list only.
+  // ---- Automatic news check (free GDELT news search, no key needed) ----
+  // Runs in the browser. Results are remembered for 30 minutes so the free service isn't overloaded.
+  var portsQueries = {
+    Savannah: '("Port of Savannah" OR "Georgia Ports Authority" OR "Garden City Terminal")',
+    Charleston: '("Port of Charleston" OR "South Carolina Ports" OR "SC Ports Authority" OR "Wando Welch" OR "Leatherman Terminal")'
+  };
+  var portsTrouble = '(congestion OR strike OR closure OR closed OR delays OR backlog OR shutdown OR "work stoppage" OR hurricane OR "tropical storm" OR "vessel backup")';
+  var portsCacheKey = "portsNewsCache";
+
+  function portsWait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function portsDate(s) {
+    return s && s.length >= 8 ? s.slice(0, 4) + "-" + s.slice(4, 6) + "-" + s.slice(6, 8) : "";
+  }
+
+  function portsFetchOne(name) {
+    var q = portsQueries[name] + " " + portsTrouble + " sourcelang:english";
+    var url = "https://api.gdeltproject.org/api/v2/doc/doc?mode=artlist&format=json&maxrecords=15&sort=datedesc&timespan=7d&query=" + encodeURIComponent(q);
+    function attempt(n) {
+      return fetch(url).then(function (res) {
+        if (!res.ok) throw new Error("busy");
+        return res.text();
+      }).then(function (text) {
+        var arts = [];
+        try { arts = JSON.parse(text).articles || []; } catch (e) {}
+        var seen = {};
+        return arts.filter(function (a) {
+          if (!a.url || !a.title || seen[a.title]) return false;
+          seen[a.title] = true;
+          return true;
+        }).map(function (a) {
+          return { title: a.title, url: a.url, source: a.domain, date: portsDate(a.seendate) };
+        });
+      }).catch(function (err) {
+        if (n >= 3) return null; // null = could not check
+        return portsWait(6000 * n).then(function () { return attempt(n + 1); });
+      });
+    }
+    return attempt(1);
+  }
+
+  function portsCheckNews() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(portsCacheKey) || "null");
+      if (saved && Date.now() - saved.time < 30 * 60 * 1000) {
+        window.PORTS_NEWS = saved.data;
+        portsRender();
+        return;
+      }
+    } catch (e) {}
+
+    var result = { updated: null, loading: true, ports: {} };
+    window.PORTS_NEWS = result;
+    portsRender();
+
+    var names = Object.keys(portsQueries);
+    var chain = Promise.resolve();
+    names.forEach(function (name, i) {
+      chain = chain.then(function () { return i ? portsWait(6000) : null; })
+        .then(function () { return portsFetchOne(name); })
+        .then(function (list) { result.ports[name] = list; portsRender(); });
+    });
+    chain.then(function () {
+      result.loading = false;
+      result.updated = new Date().toISOString();
+      portsRender();
+      var worked = names.every(function (n) { return result.ports[n] !== null; });
+      if (worked) {
+        try { localStorage.setItem(portsCacheKey, JSON.stringify({ time: Date.now(), data: result })); } catch (e) {}
+      }
+    });
+  }
+
   function portsStart() {
     portsRender();
-    var tag = document.createElement("script");
-    tag.src = "data/ports-news.js";
-    tag.onload = portsRender;
-    tag.onerror = function () {};
-    document.head.appendChild(tag);
+    if (typeof fetch === "function") portsCheckNews();
   }
 
   if (document.readyState === "loading") {
