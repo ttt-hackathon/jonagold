@@ -155,7 +155,11 @@ risk and Alerts sections cannot see them.** Fix ports.js (Jeremy's file) like th
 3. The dashboard box already has the heading "Ports and shipping". In portsRender,
    delete the `<h2 class='ports-title'>Port and shipping warnings</h2>` text from the
    `html` string so the title is not shown twice. Keep the "Last checked" line.
-4. Do NOT build weather.js or news.js: Mitchell's Claude is writing them now.
+4. Do NOT build weather.js or news.js: Mitchell's Claude has built them (already on the
+   main branch after you get the latest). Do not edit them.
+5. Your ports.js reads GDELT (scripts/fetch-ports-news.mjs). Check GDELT's terms of use,
+   then write the answer and link into LICENSING.md (row marked "Open concern"). If the
+   terms do not clearly allow our use, tell Jeremy and ask before keeping it.
 
 **Check your work (then tell Jeremy the results in plain English):**
 - Open index.html by double-click. All five boxes should show, with no red error text.
